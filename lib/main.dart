@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:flutter_tts/flutter_tts.dart';
-import 'dart:io';
+import 'package:audioplayers/audioplayers.dart';
 
 void main() {
   runApp(const MaterialApp(
@@ -19,25 +18,19 @@ class PanelApp extends StatefulWidget {
 
 class _PanelAppState extends State<PanelApp> {
   late final WebViewController controller;
-  final FlutterTts flutterTts = FlutterTts();
+  final AudioPlayer audioPlayer = AudioPlayer();
   
   final String panelUrl = 'http://10.1.8.13/painellab/public/painel?token=0d3b32bcfabbb9bebd005a9c91a48898'; 
 
   @override
   void initState() {
     super.initState();
-    _setupTts();
     _setupWebViewController();
-  }
 
-  void _setupTts() async {
-    await flutterTts.setLanguage("pt-BR");
-    await flutterTts.setSpeechRate(0.5);
-    await flutterTts.setVolume(1.0);
-    
-    // TESTE 1: Tenta falar logo no início
+    // TESTE: Fala "Sistema Iniciado" 5 segundos após abrir o app
+    // Se você ouvir isso, a solução está funcionando!
     Future.delayed(const Duration(seconds: 5), () {
-      flutterTts.speak("Aplicativo conectado com sucesso");
+      _speakViaGoogle("Sistema iniciado");
     });
   }
 
@@ -48,19 +41,36 @@ class _PanelAppState extends State<PanelApp> {
       ..addJavaScriptChannel(
         'AndroidTerminal',
         onMessageReceived: (JavaScriptMessage message) {
-          // TESTE 2: Tenta falar o que recebeu
-          _speak(message.message);
+          // Recebe o texto da senha do PHP e fala via Google
+          _speakViaGoogle(message.message);
         },
       )
       ..loadRequest(Uri.parse(panelUrl));
   }
 
-  Future<void> _speak(String text) async {
-    print("Mensagem recebida do PHP: $text");
-    if (text.isNotEmpty) {
-      // Tenta falar
-      await flutterTts.speak(text);
+  Future<void> _speakViaGoogle(String text) async {
+    if (text.isEmpty) return;
+    
+    // Monta a URL do Google Tradutor para gerar o áudio
+    final url = 'https://translate.google.com/translate_tts'
+        '?ie=UTF-8'
+        '&q=${Uri.encodeComponent(text)}'
+        '&tl=pt-BR'
+        '&client=tw-ob';
+    
+    try {
+      // Toca o áudio direto da URL, como se fosse uma música
+      await audioPlayer.stop();
+      await audioPlayer.play(UrlSource(url));
+    } catch (e) {
+      debugPrint("Erro ao reproduzir áudio do Google: $e");
     }
+  }
+
+  @override
+  void dispose() {
+    audioPlayer.dispose();
+    super.dispose();
   }
 
   @override
