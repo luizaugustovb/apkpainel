@@ -21,7 +21,6 @@ class _PanelAppState extends State<PanelApp> {
   late final WebViewController controller;
   final FlutterTts flutterTts = FlutterTts();
   
-  // URL do seu sistema
   final String panelUrl = 'http://10.1.8.13/painellab/public/painel?token=0d3b32bcfabbb9bebd005a9c91a48898'; 
 
   @override
@@ -34,31 +33,22 @@ class _PanelAppState extends State<PanelApp> {
   void _setupTts() async {
     await flutterTts.setLanguage("pt-BR");
     await flutterTts.setSpeechRate(0.5);
-    await flutterTts.setPitch(1.0);
     await flutterTts.setVolume(1.0);
     
-    // Teste de som inicial (opcional)
-    // await flutterTts.speak("Sistema Iniciado");
+    // TESTE 1: Tenta falar logo no início
+    Future.delayed(const Duration(seconds: 5), () {
+      flutterTts.speak("Aplicativo conectado com sucesso");
+    });
   }
 
   void _setupWebViewController() {
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onProgress: (int progress) {},
-          onPageStarted: (String url) {},
-          onPageFinished: (String url) {
-            // Injeta um log para debug (visível no terminal do Android)
-            controller.runJavaScript("console.log('Painel carregado no APK');");
-          },
-          onWebResourceError: (WebResourceError error) {},
-        ),
-      )
       ..addJavaScriptChannel(
         'AndroidTerminal',
         onMessageReceived: (JavaScriptMessage message) {
+          // TESTE 2: Tenta falar o que recebeu
           _speak(message.message);
         },
       )
@@ -66,14 +56,10 @@ class _PanelAppState extends State<PanelApp> {
   }
 
   Future<void> _speak(String text) async {
+    print("Mensagem recebida do PHP: $text");
     if (text.isNotEmpty) {
-      try {
-        await flutterTts.stop();
-        await flutterTts.awaitSpeakCompletion(true);
-        await flutterTts.speak(text);
-      } catch (e) {
-        debugPrint("Erro ao falar: $e");
-      }
+      // Tenta falar
+      await flutterTts.speak(text);
     }
   }
 
@@ -81,9 +67,7 @@ class _PanelAppState extends State<PanelApp> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: SafeArea(
-        child: WebViewWidget(controller: controller),
-      ),
+      body: WebViewWidget(controller: controller),
     );
   }
 }
