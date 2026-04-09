@@ -22,7 +22,7 @@ class _PanelAppState extends State<PanelApp> {
   final FlutterTts flutterTts = FlutterTts();
   
   // URL do seu sistema - Altere conforme necessário
-  final String panelUrl = 'http://localhost/painellab/panel'; 
+  final String panelUrl = 'http://10.1.8.13/painellab/public/painel?token=0d3b32bcfabbb9bebd005a9c91a48898'; 
 
   @override
   void initState() {
