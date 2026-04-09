@@ -21,7 +21,7 @@ class _PanelAppState extends State<PanelApp> {
   late final WebViewController controller;
   final FlutterTts flutterTts = FlutterTts();
   
-  // URL do seu sistema - Altere conforme necessário
+  // URL do seu sistema
   final String panelUrl = 'http://10.1.8.13/painellab/public/painel?token=0d3b32bcfabbb9bebd005a9c91a48898'; 
 
   @override
@@ -35,10 +35,10 @@ class _PanelAppState extends State<PanelApp> {
     await flutterTts.setLanguage("pt-BR");
     await flutterTts.setSpeechRate(0.5);
     await flutterTts.setPitch(1.0);
-    // Força o uso do motor do Google se disponível
-    if (Platform.isAndroid) {
-      await flutterTts.setEngine("com.google.android.tts");
-    }
+    await flutterTts.setVolume(1.0);
+    
+    // Teste de som inicial (opcional)
+    // await flutterTts.speak("Sistema Iniciado");
   }
 
   void _setupWebViewController() {
@@ -49,11 +49,13 @@ class _PanelAppState extends State<PanelApp> {
         NavigationDelegate(
           onProgress: (int progress) {},
           onPageStarted: (String url) {},
-          onPageFinished: (String url) {},
+          onPageFinished: (String url) {
+            // Injeta um log para debug (visível no terminal do Android)
+            controller.runJavaScript("console.log('Painel carregado no APK');");
+          },
           onWebResourceError: (WebResourceError error) {},
         ),
       )
-      // Esta é a "Ponte" que conecta o seu PHP ao Android
       ..addJavaScriptChannel(
         'AndroidTerminal',
         onMessageReceived: (JavaScriptMessage message) {
@@ -65,8 +67,13 @@ class _PanelAppState extends State<PanelApp> {
 
   Future<void> _speak(String text) async {
     if (text.isNotEmpty) {
-      await flutterTts.stop();
-      await flutterTts.speak(text);
+      try {
+        await flutterTts.stop();
+        await flutterTts.awaitSpeakCompletion(true);
+        await flutterTts.speak(text);
+      } catch (e) {
+        debugPrint("Erro ao falar: $e");
+      }
     }
   }
 
